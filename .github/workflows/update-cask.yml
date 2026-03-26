@@ -1,0 +1,56 @@
+name: Update Cask on Release
+
+on:
+  repository_dispatch:
+    types: [update-cask]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.3.0)"
+        required: true
+
+jobs:
+  update:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        env:
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            echo "version=${DISPATCH_VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download DMG and compute SHA256
+        id: sha
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          curl -sL "https://github.com/AadityaMishra1/Gilfoyle/releases/download/v${VERSION}/Gilfoyle-${VERSION}-universal.dmg" -o gilfoyle.dmg
+          SHA=$(shasum -a 256 gilfoyle.dmg | awk '{print $1}')
+          echo "sha256=${SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Update cask formula
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.sha.outputs.sha256 }}
+        run: |
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/gilfoyle.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/gilfoyle.rb
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/gilfoyle.rb
+          git commit -m "Update Gilfoyle to v${VERSION}"
+          git push
