@@ -1,6 +1,6 @@
 cask "gilfoyle" do
   version "0.2.1"
-  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+  sha256 "19f4f0ac6022fc13abcf6530aec713b3ea3dd7cd5cb804d8d91cb165f4fd774f"
 
   url "https://github.com/AadityaMishra1/Gilfoyle/releases/download/v#{version}/Gilfoyle-#{version}-universal.dmg"
   name "Gilfoyle"
